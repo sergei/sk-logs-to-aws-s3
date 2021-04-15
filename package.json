@@ -1,0 +1,26 @@
+{
+  "name": "sk-logs-to-aws-s3",
+  "version": "0.0.1",
+  "description": "Plugin to push SignalK server logs to AWS S3",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sergei/sk-logs-to-aws-s3.git"
+  },
+  "keywords": [
+    "signalk-node-server-plugin",
+    "signalk-category-utility"
+  ],
+  "author": "Sergei Podshivalov",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sergei/sk-logs-to-aws-s3/issues"
+  },
+  "homepage": "https://github.com/sergei/sk-logs-to-aws-s3#readme",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.12.0"
+  }
+}

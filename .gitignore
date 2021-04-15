@@ -1,3 +1,9 @@
+# Files containing sensitive information
+test/secret.js
+
+# IDE 
+.idea
+
 # Logs
 logs
 *.log
