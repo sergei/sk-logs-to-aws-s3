@@ -6,7 +6,7 @@ const UPLOAD_BATCH_SIZE = 5;
 const TIME_BETWEEN_BATCHES  = 5 * 1000
 const TIME_BETWEEN_ATTEMPTS = 15 * 60 * 1000
 
-module.exports = function (options, logDir, debug, error, isEnabled) {
+module.exports = function (options, prefix, logDir, debug, error, isEnabled) {
 
     // This function gZIPs and uploads file to the S3 bucket
     const uploadSingleFile = (file, cb) => {
@@ -23,7 +23,7 @@ module.exports = function (options, logDir, debug, error, isEnabled) {
                         const uploadParams = { 
                             Bucket: options.aws_s3_bucket_name, 
                             ContentType: 'application/gzip',
-                            Key: path.basename(file) + '.gz'
+                            Key: prefix + '/' + path.basename(file) + '.gz'
                         };
                         debug('Uploading ', uploadParams.Key,' compressed size', buffer.length, ' bytes')
                         uploadParams.Body = buffer;

@@ -23,9 +23,11 @@ module.exports = function (app) {
   }
 
   plugin.start = function (options) {
-    const logDir = getFullLogDir(app);
     enabled = true
-    s3Uploader(options, logDir, app.debug, app.error, isEnabled)
+    const logDir = getFullLogDir(app);
+    const t = app.getSelfPath('uuid').split(':');
+    const myUuid = t[t.length-1]
+    s3Uploader(options, myUuid, logDir, app.debug, app.error, isEnabled)
   };
 
   plugin.stop = function () {
@@ -40,7 +42,7 @@ module.exports = function (app) {
     properties: {
       aws_s3_bucket_name: {
         type: 'string',
-        title: 'AWS S3 bucket name, .e.g. com.exmaple.sk-logs'
+        title: 'AWS S3 bucket name, e.g. com.example.sk-logs'
       },
       aws_region: {
         type: 'string',

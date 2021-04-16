@@ -5,7 +5,7 @@ const options = require('./secret')
 
 console.log(options)
 
-logDir = '/Users/sergei/debuglog/signalk/server'
-
-s3Uploader(options, logDir, console.log, console.log)
+const logDir = '/Users/sergei/debuglog/signalk/server'
+const prefix = 'local_test'
+s3Uploader(options, prefix, logDir, console.log, console.log, () => {return true})
 
