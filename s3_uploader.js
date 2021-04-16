@@ -6,10 +6,10 @@ const UPLOAD_BATCH_SIZE = 5;
 const TIME_BETWEEN_BATCHES  = 5 * 1000
 const TIME_BETWEEN_ATTEMPTS = 15 * 60 * 1000
 
-module.exports = function (options, logDir, debug, error) {
+module.exports = function (options, logDir, debug, error, isEnabled) {
 
     // This function gZIPs and uploads file to the S3 bucket
-    const uploadSigleFile = (file, cb) => {
+    const uploadSingleFile = (file, cb) => {
         fs.readFile(file, (err, data) => {
             if (err) { 
                 error(err)
@@ -25,10 +25,10 @@ module.exports = function (options, logDir, debug, error) {
                             ContentType: 'application/gzip',
                             Key: path.basename(file) + '.gz'
                         };
-                        debug('Uploading ', uploadParams.Key,' compresed size', buffer.length, ' bytes')
+                        debug('Uploading ', uploadParams.Key,' compressed size', buffer.length, ' bytes')
                         uploadParams.Body = buffer;
                         s3.send(new PutObjectCommand(uploadParams))
-                            .then((data) => {
+                            .then(() => {
                                 debug('Uploaded', uploadParams.Key, ' deleting ...')
                                 fs.unlink(file, (err) => { if(err) error('Failed to delete ', file, err)});
                             })
@@ -50,7 +50,7 @@ module.exports = function (options, logDir, debug, error) {
         numToUpload = files.length
         cb(numToUpload)
         files.map( file => {
-            uploadSigleFile(file, cb)
+            uploadSingleFile(file, cb)
         })
     };
 
@@ -59,27 +59,39 @@ module.exports = function (options, logDir, debug, error) {
         fs.readdir(logDir, (err, files) => {
             const serverLogs = files.filter(name=>name.endsWith('.log'))
                                     .filter(name=>name.startsWith('skserver-raw_'))
-                                    .sort()
+                                    .sort()  // Sorting by name implies sorting by time stamp due to server logs naming
 
-            const numFilesToUpload = Math.min(UPLOAD_BATCH_SIZE, serverLogs.length)
-            const filesToUpload = serverLogs.slice(0, numFilesToUpload).map(x => path.join(logDir,x))
+            // Limit number of files uploaded in one batch not to strain the resources
+            let numFilesToUpload = Math.min(UPLOAD_BATCH_SIZE, serverLogs.length)
+            if( numFilesToUpload === serverLogs.length ) /// Always keep the most recent one
+                numFilesToUpload--
+
+            const filesToUpload = serverLogs.slice(0, numFilesToUpload).map(name => path.join(logDir,name))
             debug(filesToUpload)
 
-            if ( filesToUpload.length > 0 ) {
+            if ( numFilesToUpload > 0 ) {
                 uploadMultipleFiles(filesToUpload, uploadStatus)
-            }else{  // Nothing to uplaod, come back later
-                debug('Nothing to upload sleep for ', TIME_BETWEEN_ATTEMPTS/1000, ' sec')
-                setTimeout(uploadSomeLogs, TIME_BETWEEN_ATTEMPTS)
+            }else{
+                if ( isEnabled() ) {
+                    debug('Nothing to upload. Check again in', TIME_BETWEEN_ATTEMPTS / 1000, 'sec')
+                    setTimeout(uploadSomeLogs, TIME_BETWEEN_ATTEMPTS)
+                }else{
+                    debug('Plugin got disabled')
+                }
             }
         });        
     }
 
-    // The callback is called each time the upload is completed either successfuly or not
+    // This callback is called each time the upload is completed either successfully or not
     const uploadStatus = (numToUpload) => {
         debug('Remaining files to upload:', numToUpload)            
-        if ( numToUpload == 0 ){
-            debug('schedule next batch upload')
-            setTimeout(uploadSomeLogs, TIME_BETWEEN_BATCHES)
+        if ( numToUpload === 0 ){
+            if ( isEnabled() ) {
+                debug('schedule next batch upload')
+                setTimeout(uploadSomeLogs, TIME_BETWEEN_BATCHES)
+            }else{
+                debug('Plugin got disabled')
+            }
         }
     }
 
@@ -98,8 +110,7 @@ module.exports = function (options, logDir, debug, error) {
     // Start first batch upload
     let numToUpload =  0;
     uploadSomeLogs();
-    // f = path.join(logDir, 'skserver-raw_2021-04-09T18.log')
-    // uploadSigleFile(f, x => {})
 
-    
+    // f = path.join(logDir, 'skserver-raw_2021-04-09T18.log')
+    // uploadSingleFile(f, x => {})
 }

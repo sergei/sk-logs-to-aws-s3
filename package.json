@@ -1,6 +1,6 @@
 {
   "name": "sk-logs-to-aws-s3",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Plugin to push SignalK server logs to AWS S3",
   "main": "index.js",
   "scripts": {

@@ -1,3 +1,4 @@
+const path = require('path')
 const s3Uploader = require('./s3_uploader')
 
 function getFullLogDir (app, logdir) {
@@ -10,25 +11,30 @@ function getFullLogDir (app, logdir) {
 }
 
 module.exports = function (app) {
-  var plugin = {};
+  const plugin = {};
 
   plugin.id = 'sk-logs-to-aws-s3';
   plugin.name = 'Push SignalK server logs to AWS S3';
   plugin.description = 'This plugin pushes SignalK server logs to the AWS S3 bucket';
 
-  plugin.start = function (options, restartPlugin) {
-    // Here we put our plugin logic
+  let enabled = true;
+  const isEnabled = () => {
+    return enabled;
+  }
+
+  plugin.start = function (options) {
     const logDir = getFullLogDir(app);
-    app.debug('log will be read from ', logDir);
-    s3Uploader(options, logDir, app.debug, app.error)
+    enabled = true
+    s3Uploader(options, logDir, app.debug, app.error, isEnabled)
   };
 
   plugin.stop = function () {
     // Here we put logic we need when the plugin stops
     app.debug('Plugin stopped');
-};
+    enabled = false
+  };
 
-plugin.schema = {
+  plugin.schema = {
     type: 'object',
     required: ['aws_s3_bucket_name', 'aws_region' ,'aws_access_key_id', 'aws_secret_access_key'],
     properties: {
